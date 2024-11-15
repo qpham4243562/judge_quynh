@@ -1,52 +1,60 @@
-FROM judge0/compilers:1.4.0 AS production
+FROM judge0/judge0:latest
 
-ENV JUDGE0_HOMEPAGE "https://judge0.com"
-LABEL homepage=$JUDGE0_HOMEPAGE
+# Chỉ định các ngôn ngữ cần giữ lại
+ENV ENABLED_LANGUAGES="c cpp csharp java nodejs typescript python"
 
-ENV JUDGE0_SOURCE_CODE "https://github.com/judge0/judge0"
-LABEL source_code=$JUDGE0_SOURCE_CODE
+# Loại bỏ các thư viện ngôn ngữ không cần thiết để tối ưu dung lượng
+RUN rm -rf /usr/local/bash-* \
+  /usr/local/elixir-* \
+  /usr/local/erlang-* \
+  /usr/local/groovy-* \
+  /usr/local/go-* \
+  /usr/local/haskell-* \
+  /usr/local/kotlin-* \
+  /usr/local/perl-* \
+  /usr/local/rust-* \
+  /usr/local/swift-* \
+  /usr/local/sql-* \
+  /usr/local/scala-* \
+  /usr/local/octave-* \
+  /usr/local/r \
+  /usr/local/clojure-* \
+  /usr/local/clisp-* \
+  /usr/local/prolog-* \
+  /usr/local/pascal-* \
+  /usr/local/lisp-* \
+  /usr/local/coffeescript-* \
+  /usr/local/vbnc \
+  /usr/local/mlton-* \
+  /usr/local/fsharp-* \
+  /usr/local/cobol-*
 
-ENV JUDGE0_MAINTAINER "Herman Zvonimir Došilović <hermanz.dosilovic@gmail.com>"
-LABEL maintainer=$JUDGE0_MAINTAINER
+# Xóa bỏ các dependencies không cần thiết
+RUN apt-get purge -y \
+  bash \
+  elixir \
+  erlang \
+  groovy \
+  golang \
+  haskell-platform \
+  kotlin \
+  perl \
+  rustc \
+  swift \
+  sqlite3 \
+  scala \
+  octave \
+  r-base \
+  clojure \
+  clisp \
+  gprolog \
+  fp-compiler \
+  coffeescript \
+  vbnc \
+  mlton \
+  fsharp \
+  open-cobol \
+  && apt-get autoremove -y && apt-get clean
 
-ENV PATH "/usr/local/ruby-2.7.0/bin:/opt/.gem/bin:$PATH"
-ENV GEM_HOME "/opt/.gem/"
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      cron \
-      libpq-dev \
-      sudo && \
-    rm -rf /var/lib/apt/lists/* && \
-    echo "gem: --no-document" > /root/.gemrc && \
-    gem install bundler:2.1.4 && \
-    npm install -g --unsafe-perm aglio@2.3.0
-
-EXPOSE 2358
-
-WORKDIR /api
-
-COPY Gemfile* ./
-RUN RAILS_ENV=production bundle
-
-COPY cron /etc/cron.d
-RUN cat /etc/cron.d/* | crontab -
-
-COPY . .
-
-ENTRYPOINT ["/api/docker-entrypoint.sh"]
-CMD ["/api/scripts/server"]
-
-RUN useradd -u 1000 -m -r judge0 && \
-    echo "judge0 ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers && \
-    chown judge0: /api/tmp/
-
-USER judge0
-
-ENV JUDGE0_VERSION "1.13.1"
-LABEL version=$JUDGE0_VERSION
-
-
-FROM production AS development
-
-CMD ["sleep", "infinity"]
+# Đảm bảo cấu hình
+COPY judge0.conf /judge0.conf

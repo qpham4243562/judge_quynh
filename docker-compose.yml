@@ -1,14 +1,15 @@
 version: '3'
 services:
   server:
-    image: judge0/judge0:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_DB=judge0
       - POSTGRES_USER=judge0
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - REDIS_HOST=redis
-      - ENABLED_LANGUAGES="c cpp csharp java nodejs typescript python"
     ports:
       - "2358:2358"
     depends_on:
@@ -17,7 +18,9 @@ services:
     restart: always
 
   worker:
-    image: judge0/judge0:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     command: ["./scripts/workers", "--count=2"]
     environment:
       - POSTGRES_HOST=db

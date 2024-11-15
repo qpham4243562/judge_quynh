@@ -10,11 +10,14 @@ services:
       - POSTGRES_USER=judge0
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - REDIS_HOST=redis
+      - ENABLED_LANGUAGES="c cpp java python nodejs typescript"
     ports:
       - "2358:2358"
     depends_on:
       - db
       - redis
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro  # Đảm bảo file cấu hình được mount đúng cách
     restart: always
 
   worker:
@@ -28,9 +31,12 @@ services:
       - POSTGRES_USER=judge0
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - REDIS_HOST=redis
+      - ENABLED_LANGUAGES="c cpp java python nodejs typescript"
     depends_on:
       - db
       - redis
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro  # Đảm bảo file cấu hình được mount đúng cách
     restart: always
 
   db:

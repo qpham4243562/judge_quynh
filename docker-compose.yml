@@ -1,45 +1,48 @@
-x-logging:
-  &default-logging
-  logging:
-    driver: json-file
-    options:
-      max-size: 100M
-
+version: '3'
 services:
   server:
     image: judge0/judge0:latest
-    volumes:
-      - ./judge0.conf:/judge0.conf:ro
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=judge0
+      - POSTGRES_USER=judge0
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+      - ENABLED_LANGUAGES="c cpp csharp java nodejs typescript python"
     ports:
       - "2358:2358"
-    privileged: true
-    cpus: 0.5  # Giới hạn CPU cho server
-    <<: *default-logging
+    depends_on:
+      - db
+      - redis
     restart: always
 
   worker:
     image: judge0/judge0:latest
-    command: ["./scripts/workers", "--count=1"]  # Giảm số lượng worker xuống 1
-    volumes:
-      - ./judge0.conf:/judge0.conf:ro
-    privileged: true
-    cpus: 0.7  # Giới hạn CPU cho worker
-    <<: *default-logging
+    command: ["./scripts/workers", "--count=2"]
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=judge0
+      - POSTGRES_USER=judge0
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
     restart: always
 
   db:
     image: postgres:16.2
-    env_file: judge0.conf
+    environment:
+      - POSTGRES_DB=judge0
+      - POSTGRES_USER=judge0
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - data:/var/lib/postgresql/data/
-    <<: *default-logging
+      - data:/var/lib/postgresql/data
     restart: always
 
   redis:
     image: redis:7.2.4
     command: ["bash", "-c", "docker-entrypoint.sh --appendonly no"]
-    env_file: judge0.conf
-    <<: *default-logging
     restart: always
 
 volumes:

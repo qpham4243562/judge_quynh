@@ -13,15 +13,17 @@ services:
     ports:
       - "2358:2358"
     privileged: true
+    cpus: 0.5  # Giới hạn CPU cho server
     <<: *default-logging
     restart: always
 
   worker:
     image: judge0/judge0:latest
-    command: ["./scripts/workers"]
+    command: ["./scripts/workers", "--count=1"]  # Giảm số lượng worker xuống 1
     volumes:
       - ./judge0.conf:/judge0.conf:ro
     privileged: true
+    cpus: 0.7  # Giới hạn CPU cho worker
     <<: *default-logging
     restart: always
 
@@ -35,10 +37,7 @@ services:
 
   redis:
     image: redis:7.2.4
-    command: [
-      "bash", "-c",
-      'docker-entrypoint.sh --appendonly no --requirepass "$$REDIS_PASSWORD"'
-    ]
+    command: ["bash", "-c", "docker-entrypoint.sh --appendonly no"]
     env_file: judge0.conf
     <<: *default-logging
     restart: always
